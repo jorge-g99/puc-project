@@ -1,40 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Attendance } from './attendance.entity';
-import { Student } from '../student/student.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
-  constructor(
-    @InjectRepository(Attendance)
-    private attendanceRepo: Repository<Attendance>,
-    @InjectRepository(Student)
-    private studentRepo: Repository<Student>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async registerEntry(dto: CreateAttendanceDto) {
-    const student = await this.studentRepo.findOneBy({ id: dto.studentId });
-    if (!student) throw new Error('Student not found');
+    const student = await this.prisma.student.findUnique({ where: { id: dto.studentId } });
+    if (!student) throw new NotFoundException('Student not found');
 
-    const attendance = this.attendanceRepo.create({
-      student,
-      room: dto.room,
-      entryTime: new Date(),
+    const room = await this.prisma.room.findUnique({ where: { id: dto.roomId } });
+    if (!room) throw new NotFoundException('Room not found');
+
+    return this.prisma.attendance.create({
+      data: {
+        studentId: dto.studentId,
+        roomId: dto.roomId,
+        entryTime: new Date(),
+      },
     });
-    return this.attendanceRepo.save(attendance);
   }
 
   async registerExit(id: number) {
-    const attendance = await this.attendanceRepo.findOneBy({ id });
-    if (!attendance) throw new Error('Attendance record not found');
+    const attendance = await this.prisma.attendance.findUnique({ where: { id } });
+    if (!attendance) throw new NotFoundException('Attendance record not found');
 
-    attendance.exitTime = new Date();
-    return this.attendanceRepo.save(attendance);
+    return this.prisma.attendance.update({
+      where: { id },
+      data: { exitTime: new Date() },
+    });
   }
 
-  findAll(): Promise<Attendance[]> {
-    return this.attendanceRepo.find();
+  findAll() {
+    return this.prisma.attendance.findMany({
+      include: { student: true, room: true },
+    });
   }
 }

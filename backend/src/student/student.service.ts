@@ -1,32 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Student } from './student.entity';
+import { Injectable, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class StudentService {
-  constructor(
-    @InjectRepository(Student)
-    private studentRepo: Repository<Student>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateStudentDto): Promise<Student> {
+  async create(dto: CreateStudentDto) {
+    const existing = await this.prisma.student.findUnique({ where: { email: dto.email } });
+    if (existing) throw new ConflictException('Student email already exists');
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const student = this.studentRepo.create({ ...dto, password: hashedPassword });
-    return this.studentRepo.save(student);
+
+    return this.prisma.student.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        password: hashedPassword,
+      },
+    });
   }
 
-  findAll(): Promise<Student[]> {
-    return this.studentRepo.find();
+  findAll() {
+    return this.prisma.student.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
   }
 
-  findOne(id: number): Promise<Student | null> {
-    return this.studentRepo.findOneBy({ id });
+  findOne(id: number) {
+    return this.prisma.student.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
   }
 
-  async remove(id: number): Promise<void> {
-    await this.studentRepo.delete(id);
+  async remove(id: number) {
+    return this.prisma.student.delete({ where: { id } });
   }
 }

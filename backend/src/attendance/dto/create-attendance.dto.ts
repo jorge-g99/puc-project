@@ -1,9 +1,11 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsInt } from 'class-validator';
 
 export class CreateAttendanceDto {
   @IsNotEmpty()
+  @IsInt()
   studentId: number;
 
   @IsNotEmpty()
-  room: string;
+  @IsInt()
+  roomId: number;
 }
