@@ -1,27 +1,36 @@
-import { Controller, Post, Get, Param, Body, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, UseGuards } from '@nestjs/common';
 import { RoomService } from './room.service';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('rooms')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class RoomController {
-  constructor(private roomService: RoomService) {}
+  constructor(private readonly roomService: RoomService) {}
 
   @Post()
-  create(@Body() body: { name: string; type: string; capacity?: number }) {
-    return this.roomService.createRoom(body.name, body.type, body.capacity);
+  @Roles('admin', 'staff')
+  create(@Body() dto: CreateRoomDto) {
+    return this.roomService.create(dto);
   }
 
   @Get()
+  @Roles('admin', 'staff')
   findAll() {
     return this.roomService.findAll();
   }
 
   @Get(':id')
+  @Roles('admin', 'staff')
   findOne(@Param('id') id: string) {
-    return this.roomService.findById(Number(id));
+    return this.roomService.findOne(+id);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.roomService.deleteRoom(Number(id));
+  @Roles('admin')
+  remove(@Param('id') id: string) {
+    return this.roomService.remove(+id);
   }
 }

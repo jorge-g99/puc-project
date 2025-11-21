@@ -1,25 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateRoomDto } from './dto/create-room.dto';
 
 @Injectable()
 export class RoomService {
   constructor(private prisma: PrismaService) {}
 
-  async createRoom(name: string, type: string, capacity?: number) {
+  async create(dto: CreateRoomDto) {
+    const existing = await this.prisma.room.findUnique({ where: { name: dto.name } });
+    if (existing) throw new ConflictException('Room name already exists');
+
     return this.prisma.room.create({
-      data: { name, type, capacity },
+      data: {
+        name: dto.name,
+        type: dto.type,
+        capacity: dto.capacity,
+      },
     });
   }
 
-  async findAll() {
+  findAll() {
     return this.prisma.room.findMany();
   }
 
-  async findById(id: number) {
+  findOne(id: number) {
     return this.prisma.room.findUnique({ where: { id } });
   }
 
-  async deleteRoom(id: number) {
+  async remove(id: number) {
     return this.prisma.room.delete({ where: { id } });
   }
 }
