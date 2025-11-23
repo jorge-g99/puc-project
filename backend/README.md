@@ -21,61 +21,118 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-# School Attendance Management API
+# 🎓 School Attendance Management API
 
-This project is a backend application to manage the use of educational spaces, allowing analysis of occupancy rates. Built with **NestJS**, **Prisma**, **PostgreSQL**, and JWT authentication.
-
----
-
-## 📚 Features
-
-- CRUD for **Students**.
-- CRUD for **Rooms**.
-- Attendance management: register **entry** and **exit** of students.
-- JWT-based authentication and role-based authorization.
-- Protected routes so only authenticated users can access the API.
+Backend para gerenciamento de uso de salas e controle de entrada/saída de estudantes.  
+Construído com **NestJS**, **Prisma**, **PostgreSQL**, **Docker** e **JWT Authentication**.
 
 ---
 
-## 🏗 Project Structure
-
-    src/
-    ├─ auth/
-    │ ├─ auth.module.ts
-    │ ├─ auth.service.ts
-    │ ├─ auth.controller.ts
-    │ ├─ jwt.strategy.ts
-    │ ├─ jwt-auth.guard.ts
-    │ └─ constants.ts
-    ├─ user/
-    │ ├─ user.module.ts
-    │ ├─ user.service.ts
-    │ ├─ user.controller.ts
-    │ └─ dto/create-user.dto.ts
-    ├─ student/
-    │ ├─ student.module.ts
-    │ ├─ student.service.ts
-    │ ├─ student.controller.ts
-    │ └─ dto/create-student.dto.ts
-    ├─ room/
-    │ ├─ room.module.ts
-    │ ├─ room.service.ts
-    │ ├─ room.controller.ts
-    │ └─ dto/create-room.dto.ts
-    ├─ attendance/
-    │ ├─ attendance.module.ts
-    │ ├─ attendance.service.ts
-    │ ├─ attendance.controller.ts
-    │ └─ dto/create-attendance.dto.ts
-    └─ prisma/
-    └─ prisma.service.ts
-
+# 🚀 Tecnologias Utilizadas
+- **NestJS** (estrutura modular e escalável)
+- **Prisma ORM**
+- **PostgreSQL**
+- **JWT** para autenticação
+- **RBAC** (Role-Based Access Control)
+- **Docker + Docker Compose**
 
 ---
 
-## 📦 Database Schema (Prisma)
+# 📚 Funcionalidades
 
-```prisma
+- CRUD de **Students**
+- CRUD de **Rooms**
+- CRUD de **Users** (apenas funções administrativas)
+- Registro de **entrada** e **saída** de alunos
+- Autenticação via **JWT**
+- Autorização via **Roles** (ADMIN, STAFF)
+- Rotas protegidas
+
+---
+
+# 🐳 Como rodar com Docker
+
+## 1. Subir toda a stack
+```bash
+docker compose up --build
+```
+
+Isso irá:
+
+- Criar o container postgres
+- Criar o container backend
+- Rodar migrations
+
+---
+
+# 🌱 Rodar Seed Manualmente
+
+Dentro da pasta do projeto, execute:
+```bash
+docker exec -it backend_app sh
+```
+
+Depois execute:
+```bash
+npx prisma db seed
+```
+
+Após o seed, o usuário inicial será criado.
+
+---
+
+# 🔑 Usuário padrão (Seed)
+
+```bash
+email: admin@example.com
+password: admin123
+role: ADMIN
+```
+
+Use este usuário para gerar o token JWT.
+
+---
+
+# ▶️ Testando a API
+
+1) Login – obter token
+
+POST `/auth/login`
+
+Request:
+```bash
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+```
+
+Response:
+```bash
+{
+  "access_token": "..."
+}
+```
+
+2) Usar o token nas rotas protegidas
+
+Header:
+```bash
+Authorization: Bearer SEU_TOKEN_AQUI
+```
+
+3) Exemplo: listar estudantes
+
+GET `/students`
+```bash
+curl -H "Authorization: Bearer TOKEN_AQUI" http://localhost:3000/students
+```
+
+---
+
+🗄 Banco de Dados (Schema Prisma)
+
+```
 model User {
   id       Int    @id @default(autoincrement())
   name     String
@@ -109,3 +166,6 @@ model Attendance {
   student   Student   @relation(fields: [studentId], references: [id])
   room      Room      @relation(fields: [roomId], references: [id])
 }
+```
+
+---
