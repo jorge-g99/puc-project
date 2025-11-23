@@ -10,6 +10,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   password: string;
 
-  @IsIn(['admin', 'staff'])
+  @IsIn(['ADMIN', 'STAFF'])
   role: string;
 }

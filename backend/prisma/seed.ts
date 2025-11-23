@@ -1,40 +1,25 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../src/auth/role.enum';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
 
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.upsert({
+  const password = await bcrypt.hash('admin123', 10);
+
+  await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {},
     create: {
-      name: 'Admin',
+      name: 'Administrador',
       email: 'admin@example.com',
-      password: adminPassword,
-      role: 'admin',
+      password,
+      role: Role.ADMIN,
     },
   });
-  console.log('Admin user created:', admin.email);
 
-  const roomsData = [
-    { name: 'Classroom A', type: 'Classroom', capacity: 30 },
-    { name: 'Laboratory 1', type: 'Lab', capacity: 20 },
-    { name: 'Study Room 101', type: 'Study', capacity: 10 },
-  ];
-
-  for (const room of roomsData) {
-    const r = await prisma.room.upsert({
-      where: { name: room.name },
-      update: {},
-      create: room,
-    });
-    console.log('Room created:', r.name);
-  }
-
-  console.log('Seeding finished!');
+  console.log('Seed executado com sucesso!');
 }
 
 main()
