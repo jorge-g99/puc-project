@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Delete, UseGuards, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, UseGuards, Put, Query } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -20,8 +20,12 @@ export class StudentController {
 
   @Get()
   @Roles(Role.ADMIN, Role.STAFF)
-  findAll() {
-    return this.studentService.findAll();
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('search') search?: string, 
+  ) {
+    return this.studentService.findAll(Number(page), Number(limit), search);
   }
 
   @Get(':id')

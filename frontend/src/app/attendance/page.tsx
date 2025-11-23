@@ -3,78 +3,102 @@
 import { useState } from "react";
 import {
   Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody,
-  Button, MenuItem, Select, FormControl, InputLabel, Box
+  Button, Box, TextField, Autocomplete
 } from "@mui/material";
-import { useStudents } from "@/hooks/useStudents";
-import { useRooms } from "@/hooks/useRooms";
+import { Room } from "@/hooks/useRooms";
+import { Student } from "@/hooks/useStudents";
 import { useAttendance } from "@/hooks/useAttendance";
+import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import api from "@/libs/api";
 
 export default function AttendancePage() {
-  const { studentsQuery } = useStudents();
-  const { roomsQuery } = useRooms();
   const { attendanceQuery, registerEntry, registerExit } = useAttendance();
 
-  const [studentId, setStudentId] = useState('');
-  const [roomId, setRoomId] = useState('');
+  const [studentInput, setStudentInput] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  if (studentsQuery.isLoading || roomsQuery.isLoading || attendanceQuery.isLoading) return <p>Carregando...</p>;
-  if (studentsQuery.isError || roomsQuery.isError || attendanceQuery.isError) return <p>Erro ao carregar dados</p>;
+  const [roomInput, setRoomInput] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
-  const students = studentsQuery.data || [];
-  const rooms = roomsQuery.data || [];
+  const studentsQuery = useQuery<Student[], Error>({
+    queryKey: ['students', studentInput],
+    queryFn: async () => {
+      if (!studentInput) return [];
+      const { data } = await api.get('/students', { params: { search: studentInput, page: 1, limit: 10 } });
+      return data.data || data;
+    },
+    enabled: studentInput.length > 0,
+  });
+
+  const roomsQuery = useQuery<Room[], Error>({
+    queryKey: ['rooms', roomInput],
+    queryFn: async () => {
+      if (!roomInput) return [];
+      const { data } = await api.get('/rooms', { params: { search: roomInput, page: 1, limit: 10 } });
+      return data.data || data;
+    },
+    enabled: roomInput.length > 0,
+  });
+
+  const rooms: Room[] = roomsQuery.data || [];
+  const students: Student[] = studentsQuery.data || [];
   const attendance = attendanceQuery.data || [];
 
   const handleEntry = () => {
-    if (!studentId || !roomId) return;
-    registerEntry.mutate({ studentId, roomId });
-    setStudentId('');
-    setRoomId('');
+    if (!selectedStudent || !selectedRoom) return;
+    registerEntry.mutate({ studentId: selectedStudent.id, roomId: selectedRoom.id });
+    setSelectedStudent(null);
+    setStudentInput('');
+    setSelectedRoom(null);
+    setRoomInput('');
   };
 
   return (
     <DashboardLayout>
       <Typography variant="h4" mb={2}>Attendance</Typography>
 
-      {/* Registro de entrada */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box display="flex" gap={2} flexWrap="wrap">
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Aluno</InputLabel>
-            <Select
-              value={studentId}
-              label="Aluno"
-              onChange={(e) => setStudentId(e.target.value)}
-            >
-              {students.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            sx={{ minWidth: 250 }}
+            options={students}
+            getOptionLabel={(option) => option.name}
+            value={selectedStudent}
+            onChange={(_, newValue) => setSelectedStudent(newValue)}
+            inputValue={studentInput}
+            onInputChange={(_, newInput) => setStudentInput(newInput)}
+            loading={studentsQuery.isLoading}
+            renderInput={(params) => <TextField {...params} label="Aluno" />}
+            noOptionsText={studentInput.length > 0 ? "Nenhum aluno encontrado" : "Digite para buscar"}
+          />
 
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Sala</InputLabel>
-            <Select
-              value={roomId}
-              label="Sala"
-              onChange={(e) => setRoomId(e.target.value)}
-            >
-              {rooms.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            sx={{ minWidth: 250 }}
+            options={rooms}
+            getOptionLabel={(option) => option.name}
+            value={selectedRoom}
+            onChange={(_, newValue) => setSelectedRoom(newValue)}
+            inputValue={roomInput}
+            onInputChange={(_, newInput) => setRoomInput(newInput)}
+            loading={roomsQuery.isLoading}
+            renderInput={(params) => <TextField {...params} label="Sala" />}
+            noOptionsText={roomInput.length > 0 ? "Nenhuma sala encontrada" : "Digite para buscar"}
+          />
 
           <Button variant="contained" onClick={handleEntry}>Registrar Entrada</Button>
         </Box>
       </Paper>
 
-      {/* Tabela de presenças */}
       <Paper>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: 200 }}><strong>Aluno</strong></TableCell>
-              <TableCell sx={{ width: 200 }}><strong>Sala</strong></TableCell>
-              <TableCell sx={{ width: 180 }}><strong>Entrada</strong></TableCell>
-              <TableCell sx={{ width: 180 }}><strong>Saída</strong></TableCell>
-              <TableCell sx={{ width: 120 }} align="right"><strong>Ações</strong></TableCell>
+              <TableCell><strong>Aluno</strong></TableCell>
+              <TableCell><strong>Sala</strong></TableCell>
+              <TableCell><strong>Entrada</strong></TableCell>
+              <TableCell><strong>Saída</strong></TableCell>
+              <TableCell align="right"><strong>Ações</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

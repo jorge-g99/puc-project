@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody,
-  IconButton, TextField, Tooltip, Box
+  IconButton, TextField, Button, Tooltip, Box, Pagination
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -14,14 +14,19 @@ import StudentForm from "@/components/forms/StudentForm";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function StudentsPage() {
-  const { studentsQuery, createStudent, updateStudent, deleteStudent } = useStudents();
+  const [page, setPage] = useState(1);
+  const limit = 10; // quantidade por página
+  const { studentsQuery, createStudent, updateStudent, deleteStudent } = useStudents(page, limit);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
 
+  if (studentsQuery.isLoading) return <p>Carregando...</p>;
   if (studentsQuery.isError) return <p>Erro ao carregar estudantes</p>;
 
-  const students = studentsQuery.data || [];
+  const students = studentsQuery.data?.data || [];
+  const totalPages = studentsQuery.data?.totalPages || 1;
 
   const startEdit = (student: Student) => {
     setEditingId(student.id);
@@ -40,27 +45,23 @@ export default function StudentsPage() {
     cancelEdit();
   };
 
-  const columnStyles = {
-    name: { width: 200 },
-    email: { width: 250 },
-    actions: { width: 150 },
-  };
-
   return (
     <DashboardLayout>
       <Typography variant="h4" mb={2}>Students</Typography>
 
+      {/* Formulário de criação */}
       <Box mb={3}>
         <StudentForm onSubmit={(data) => createStudent.mutate(data)} />
       </Box>
 
+      {/* Tabela de estudantes */}
       <Paper>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={columnStyles.name}><strong>Nome</strong></TableCell>
-              <TableCell sx={columnStyles.email}><strong>Email</strong></TableCell>
-              <TableCell sx={columnStyles.actions} align="right"><strong>Ações</strong></TableCell>
+              <TableCell><strong>Nome</strong></TableCell>
+              <TableCell><strong>Email</strong></TableCell>
+              <TableCell align="right"><strong>Ações</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -68,7 +69,7 @@ export default function StudentsPage() {
               <TableRow key={student.id}>
                 {editingId === student.id ? (
                   <>
-                    <TableCell sx={columnStyles.name}>
+                    <TableCell>
                       <TextField
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
@@ -77,7 +78,7 @@ export default function StudentsPage() {
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell sx={columnStyles.email}>
+                    <TableCell>
                       <TextField
                         value={editEmail}
                         onChange={(e) => setEditEmail(e.target.value)}
@@ -86,7 +87,7 @@ export default function StudentsPage() {
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell sx={columnStyles.actions} align="right">
+                    <TableCell align="right">
                       <Tooltip title="Salvar">
                         <IconButton color="success" onClick={() => submitEdit(student.id)}>
                           <CheckIcon />
@@ -101,9 +102,9 @@ export default function StudentsPage() {
                   </>
                 ) : (
                   <>
-                    <TableCell sx={columnStyles.name}>{student.name}</TableCell>
-                    <TableCell sx={columnStyles.email}>{student.email}</TableCell>
-                    <TableCell sx={columnStyles.actions} align="right">
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    <TableCell align="right">
                       <Tooltip title="Editar">
                         <IconButton onClick={() => startEdit(student)}>
                           <EditIcon />
@@ -122,6 +123,14 @@ export default function StudentsPage() {
           </TableBody>
         </Table>
       </Paper>
+      <Box display="flex" justifyContent="center" p={2}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={(_, value) => setPage(value)}
+          color="primary"
+        />
+      </Box>
     </DashboardLayout>
   );
 }

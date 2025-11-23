@@ -13,6 +13,19 @@ export class AttendanceService {
     const room = await this.prisma.room.findUnique({ where: { id: dto.roomId } });
     if (!room) throw new NotFoundException('Room not found');
 
+    const openAttendance = await this.prisma.attendance.findFirst({
+      where: {
+        studentId: dto.studentId,
+        exitTime: null,
+      },
+    });
+
+    if (openAttendance) {
+      throw new Error(
+        `O aluno "${student.name}" já possui uma entrada aberta na sala "${openAttendance.roomId}"`
+      );
+    }
+
     const attendance = await this.prisma.attendance.create({
       data: {
         studentId: dto.studentId,

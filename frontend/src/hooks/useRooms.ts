@@ -16,20 +16,21 @@ export interface CreateRoomInput {
   capacity?: number;
 }
 
-export function useRooms() {
+export function useRooms(search: string = "") {
   const queryClient = useQueryClient();
 
   const roomsQuery = useQuery<Room[], Error>({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', search],
     queryFn: async () => {
-      const { data } = await api.get<Room[]>('/rooms');
-      return data;
+      const { data } = await api.get('/rooms', { params: { search } });
+      return Array.isArray(data) ? data : data.data || [];
     },
+    enabled: true,
   });
 
   const createRoom = useMutation<Room, Error, CreateRoomInput>({
     mutationFn: async (room) => {
-      const { data } = await api.post<Room>('/rooms', room);
+      const { data } = await api.post('/rooms', room);
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rooms'] }),

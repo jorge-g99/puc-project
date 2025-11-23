@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RoomService {
@@ -19,8 +20,30 @@ export class RoomService {
     });
   }
 
-  findAll() {
-    return this.prisma.room.findMany();
+  async findAll(page = 1, limit = 10, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.RoomWhereInput = search
+      ? { name: { contains: search, mode: Prisma.QueryMode.insensitive } }
+      : {};
+
+    const [rooms, total] = await this.prisma.$transaction([
+      this.prisma.room.findMany({
+        select: { id: true, name: true, type: true, capacity: true },
+        skip,
+        take: limit,
+        where,
+      }),
+      this.prisma.room.count({ where }),
+    ]);
+
+    return {
+      data: rooms,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number) {
