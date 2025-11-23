@@ -13,28 +13,59 @@ export class AttendanceService {
     const room = await this.prisma.room.findUnique({ where: { id: dto.roomId } });
     if (!room) throw new NotFoundException('Room not found');
 
-    return this.prisma.attendance.create({
+    const attendance = await this.prisma.attendance.create({
       data: {
         studentId: dto.studentId,
         roomId: dto.roomId,
         entryTime: new Date(),
       },
+      include: { student: true, room: true },
     });
+
+    return {
+      id: attendance.id.toString(),
+      studentId: attendance.studentId.toString(),
+      roomId: attendance.roomId.toString(),
+      entryTime: attendance.entryTime,
+      exitTime: attendance.exitTime,
+      studentName: attendance.student.name,
+      roomName: attendance.room.name,
+    };
   }
 
   async registerExit(id: number) {
-    const attendance = await this.prisma.attendance.findUnique({ where: { id } });
-    if (!attendance) throw new NotFoundException('Attendance record not found');
-
-    return this.prisma.attendance.update({
+    const attendance = await this.prisma.attendance.update({
       where: { id },
       data: { exitTime: new Date() },
-    });
-  }
-
-  findAll() {
-    return this.prisma.attendance.findMany({
       include: { student: true, room: true },
     });
+
+    return {
+      id: attendance.id.toString(),
+      studentId: attendance.studentId.toString(),
+      roomId: attendance.roomId.toString(),
+      entryTime: attendance.entryTime,
+      exitTime: attendance.exitTime,
+      studentName: attendance.student.name,
+      roomName: attendance.room.name,
+    };
+  }
+
+  async findAll() {
+    const attendances = await this.prisma.attendance.findMany({
+      include: { student: true, room: true },
+      orderBy: { entryTime: 'desc' },
+    });
+
+    return attendances.map(a => ({
+      id: a.id.toString(),
+      studentId: a.studentId.toString(),
+      roomId: a.roomId.toString(),
+      entryTime: a.entryTime,
+      exitTime: a.exitTime,
+      studentName: a.student.name,
+      roomName: a.room.name,
+    }));
   }
 }
+
