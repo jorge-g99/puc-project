@@ -1,10 +1,11 @@
-import { Controller, Post, Body, Get, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, UseGuards, Put } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from 'src/auth/role.enum';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Controller('students')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,6 +28,15 @@ export class StudentController {
   @Roles(Role.ADMIN, Role.STAFF)
   findOne(@Param('id') id: string) {
     return this.studentService.findOne(+id);
+  }
+
+  @Put(':id')
+  @Roles(Role.ADMIN, Role.STAFF)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateStudentDto
+  ) {
+    return this.studentService.update(+id, dto);
   }
 
   @Delete(':id')
