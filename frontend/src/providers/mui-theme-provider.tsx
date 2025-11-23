@@ -9,14 +9,10 @@ const theme = createTheme({
     primary: { main: "#8a0538" },
     secondary: { main: "#9c27b0" },
     background: {
-      default: "#696969",
-      paper: "#7d7d7d",
+      default: "#f5f5f5", // cor de fundo principal
+      paper: "#ffffff",    // cor de componentes Paper
     },
-    text: {
-      primary: "#ffffff",
-      secondary: "#f0f0f0",
-    },
-  },
+  }
 });
 
 export default function MuiThemeProvider({ children }: { children: React.ReactNode }) {
