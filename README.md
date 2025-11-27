@@ -73,7 +73,7 @@ Use este usuário para gerar o token JWT e acessar os endpoints protegidos do ba
 Se o Docker já estiver rodando, o backend estará disponível em:
 
 ```
-http://localhost:3001
+http://localhost:3000
 ```
 
 Endpoints importantes:
@@ -117,7 +117,7 @@ npm run dev
 O aplicativo estará disponível em:
 
 ```bash
-http://localhost:3001
+http://localhost:3001/login
 ```
 
 ---
